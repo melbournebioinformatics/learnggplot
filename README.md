@@ -1,2 +1,3 @@
-# learnggplot
-Learning materials for ggplot
+# Learn ggplot
+
+This repository contains material for the [a ggplot tutorial](vlsci.github.io/learnggplot).
