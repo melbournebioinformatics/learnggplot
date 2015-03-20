@@ -1,17 +1,9 @@
 ---
 author: "Ira Cooke"
-date: 'null'
 output: ioslides_presentation
 ---
 
-# Beautiful graphics with R and ggplot2
-
-
-# What is ggplot? { .build }
-> - A single package for creating a diverse range of plots in R
-> - A natural way to graphically express structured data
-> - An implementation of the [grammar of graphics](http://vita.had.co.nz/papers/layered-grammar.pdf)
-
+# Exploring data with ggplot2
 
 ## Classic plots vs ggplot { .build }
   
@@ -19,17 +11,19 @@ output: ioslides_presentation
   
 - One function per plot style
 - Limited ability to modify the plot (eg colours) depending on plot type
-- Manual subsetting or modification of data often required
+- Inconsistent data requirements (eg matrix vs data frame, tall vs wide)
 
 
 ### `ggplot2`
 
 - One package many, many, many plot styles
 - Many aspects of plot appearance can be made to depend on the data
-- Feed ggplot all your data, possibly after using `melt` and `cast`
+- Data should generally be tall rather than wide. Use `melt` and `cast` to transform.
 
 
 ## Grammar of Graphics { .build }
+
+ggplot is an implementation of the [grammar of graphics](http://vita.had.co.nz/papers/layered-grammar.pdf)
 
 >- Data
 >- Geometric objects (points, lines, areas)
@@ -40,49 +34,200 @@ output: ioslides_presentation
 >- Annotations (title, legend etc)
 >- Faceting (representing data across multiple plots)
 
-The first five of these fundamentals form a `layer` in ggplot, and multiple layers can be used to build very complex plots.
+## Layers in ggplot {.build}
 
-A simple scatterplot
-========================================================
+Each layer in ggplot has at least `data`, `geom` (geometric object), `stat` (statistical transform) and `aes` (aesthetic)
 
+The `ggplot` function sets up a plot's baseline defaults
 
-```r
-summary(cars)
+```{r,eval=FALSE}
+p<-ggplot(data,aes(x=someval,y=someval))
 ```
 
-```
-     speed           dist       
- Min.   : 4.0   Min.   :  2.00  
- 1st Qu.:12.0   1st Qu.: 26.00  
- Median :15.0   Median : 36.00  
- Mean   :15.4   Mean   : 42.98  
- 3rd Qu.:19.0   3rd Qu.: 56.00  
- Max.   :25.0   Max.   :120.00  
+Add layers with the `+` operator
+
+```{r,eval=FALSE}
+p+geom_point()
 ```
 
-Alternative geometries
-========================================================
+This layers inherits `data` and `aes` from the base plot and has a default `stat`
 
-Try to show a a few
-
-Aesthetics
-========================================================
-
-Colour, shape on points.  Demo the fact that layers can have different aesthetics
+## A simple scatterplot {.build}
 
 
-Scale
-========================================================
+```{r,eval=FALSE}
+library(ggplot2)
+data(diamonds)
+### <b>
+p<-ggplot(diamonds)
+p+geom_point(aes(x=carat,y=price))
+### </b>
+```
 
-Colour scale
+```{r, echo=FALSE}
+library(ggplot2)
+data(diamonds)
+### <b>
+ggplot(diamonds)+geom_point(aes(x=carat,y=price))
+### </b>
+```
 
-Coordinate System
-========================================================
+## Add another aesthetic mapping {.build}
 
-Polar, Map
+```{r, eval=FALSE}
+p<-ggplot(diamonds)
+### <b>
+p+geom_point(aes(x=carat,y=price,color=clarity))
+### </b>
+```
 
-Facetting
-========================================================
+```{r, echo=FALSE}
+library(ggplot2)
+data(diamonds)
+ggplot(diamonds,aes(x=carat,y=price))+geom_point(aes(color=clarity))
+```
 
-Polar, Map
+## Available aesthetics {.build}
+
+Aesthetics for `geom_point` are;
+
+- x
+- y
+- alpha
+- colour
+- fill
+- shape
+- size
+
+Find available aesthetics at [http://docs.ggplot2.org/current/](http://docs.ggplot2.org/current/). 
+
+<div class="notes">
+Aesthetics map properties of geometric object object (`geom`) to the data. Each `geom` has a different set of available properties. 
+</div>
+
+
+## Adding another layer {.build}
+
+<div class="notes">
+Each layer in ggplot has its own `data`,`aes`,`geom` and `stat`. These are all required, but ggplot has a hierarchical defaults system which means that in practice they are often inferred. 
+</div>
+
+```{r, eval=FALSE}
+p<-ggplot(diamonds,aes(x=carat,y=price))
+p+geom_point(aes(color=clarity))
+### <b>
+p+geom_smooth()
+### </b>
+```
+
+```{r, echo=FALSE}
+library(ggplot2)
+data(diamonds)
+ggplot(data=diamonds,aes(x=carat,y=price))+geom_point(aes(color=clarity))+stat_smooth(method="gam",formula=y ~ s(x, bs = "cs"))
+```
+
+## geom and stat objects are often complementary {.build}
+
+For example `geom_smooth()` has `stat_smooth()` as its default `stat`
+
+A `stat` adds new columns to the data that are used by the geom. For example `stat_smooth()` creates;
+
+- `y` predicted value
+- `ymin` lower pointwise confidence interval around the mean
+- `ymax` upper pointwise confidence interval around the mean
+- `se` standard error
+
+These can all be accessed for aesthetic mapping if needed.
+
+## Another `stat` example {.build}
+
+```{r, eval=FALSE}
+p<-ggplot(data=diamonds,aes(x=carat,y=price))
+### <b>
+p<-p+stat_density2d(aes(color=..level..))
+### </b>
+p+scale_color_continuous("Density")
+```
+
+```{r, echo=FALSE}
+library(ggplot2)
+p<-ggplot(data=diamonds,aes(x=carat,y=price))
+p+stat_density2d(aes(color=log(..level..)))+scale_color_continuous("Density")
+```
+
+## Where does `..level..` come from?
+
+```{r,echo=TRUE}
+help(stat_contour)
+```
+
+...
+
+<h3 style="color: rgb(40%, 40%, 40%);font-family: monospace;font-size: large">Value</h3>
+
+<p style="color: black;font-family: monospace;font-size: medium">A data frame with additional column:
+</p>
+<table style="color: black;font-family: monospace;font-size: medium" summary="R valueblock">
+<tr style="color: black;font-family: monospace;font-size: medium" valign="top"><td><code>level </code></td>
+<td>
+&nbsp;height of contour
+</td></tr>
+</table>
+
+...
+
+## Facetting {.build}
+
+```{r, eval=FALSE}
+p<-ggplot(data=diamonds,aes(x=carat,y=price))
+p<-p+geom_point(aes(color=cut))
+### <b>
+p+facet_grid(color~cut)
+### </b>
+```
+
+```{r, echo=FALSE}
+library(ggplot2)
+p<-ggplot(data=diamonds,aes(x=carat,y=price))
+p<-p+geom_point(aes(color=cut))
+p+facet_grid(color~cut)
+```
+
+## Reshaping data {.smaller}
+
+Use the `reshape2` package to easily transform data for `ggplot`
+
+```{r}
+d<-read.csv("mqdata.csv")
+head(d)
+```
+
+## Melt data from wide to tall {.smaller .build}
+
+```{r}
+library(reshape2)
+md=melt(d,id.vars=c("Protein","nmiss"),variable.name="Sample",value.name="Intensity")
+head(md)
+```
+
+## Cast from tall to wide {.smaller .build}
+
+```{r}
+cmd=dcast(md,Protein+nmiss~Sample,value.var='Intensity')
+head(cmd)
+```
+
+## Visualise Missingness
+
+```{r,eval=FALSE}
+p<-ggplot(md,aes(x=as.factor(nmiss),y=log2(Intensity)))
+p+geom_boxplot()+facet_wrap(~Sample)
+```
+
+```{r,echo=FALSE}
+options(warn=-1)
+suppressWarnings(ggplot(md,aes(x=as.factor(nmiss),y=log2(Intensity)))+geom_boxplot()+facet_wrap(~Sample))
+```
+
+
 
