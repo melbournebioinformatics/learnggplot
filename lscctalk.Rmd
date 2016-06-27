@@ -29,8 +29,8 @@ ggplot is an implementation of the [grammar of graphics](http://vita.had.co.nz/p
 >- Geometric objects (points, lines, areas)
 >- Aesthetic mappings between data and objects
 >- Statistical transformations (binning, aggregating)
->- Position adjustment (stack, dodge, jitter)
->- Coordinate system and scale
+>- Coordinate system
+>- Scales (map data to aesthetic attributes)
 >- Annotations (title, legend etc)
 >- Faceting (representing data across multiple plots)
 

@@ -1,3 +1,9 @@
 .bundle
 _site
 Gemfile.lock
+.Rproj.user
+.R*
+*.Rpres
+*.html
+lscctalk-figure/
+*.pdf
