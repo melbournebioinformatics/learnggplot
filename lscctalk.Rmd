@@ -139,42 +139,86 @@ A `stat` adds new columns to the data that are used by the geom. For example `st
 
 These can all be accessed for aesthetic mapping if needed.
 
-## Another `stat` example {.build}
+## Another `stat` , `geom` example {.build}
 
 ```{r, eval=FALSE}
-p<-ggplot(data=diamonds,aes(x=carat,y=price))
+p <- ggplot(data=diamonds,aes(x=price))
 ### <b>
-p<-p+stat_density2d(aes(color=..level..))
+p <- p + stat_bin(aes(y = ..count..))
 ### </b>
-p+scale_color_continuous("Density")
 ```
 
 ```{r, echo=FALSE}
-library(ggplot2)
-p<-ggplot(data=diamonds,aes(x=carat,y=price))
-p+stat_density2d(aes(color=log(..level..)))+scale_color_continuous("Density")
+ggplot(data=diamonds,aes(x=price)) + stat_bin(aes(y = ..count..), binwidth = 20)
 ```
 
-## Where does `..level..` come from?
+## Where does `..count..` come from?
 
 ```{r,echo=TRUE}
-help(stat_contour)
+help(stat_bin)
 ```
 
-...
+The `stat_bin` function adds four new computed variables to the data;
 
-<h3 style="color: rgb(40%, 40%, 40%);font-family: monospace;font-size: large">Value</h3>
+- count
+- density
+- ncount
+- ndensity
 
-<p style="color: black;font-family: monospace;font-size: medium">A data frame with additional column:
-</p>
-<table style="color: black;font-family: monospace;font-size: medium" summary="R valueblock">
-<tr style="color: black;font-family: monospace;font-size: medium" valign="top"><td><code>level </code></td>
-<td>
-&nbsp;height of contour
-</td></tr>
-</table>
+We mapped `..count..` to `y` in order to create a histogram
 
-...
+## Coordinate Systems {.build}
+
+Coordinate systems map object positions onto the plot itself.  There are certain **special** aesthetics associated with coordinate systems.  For example in cartesian coordinates the aesthetics `x` and `y` describe position on the page.  In polar coordinates the equivalent are `theta` and `radius`. Examples include;
+
+- Cartesian (standard x,y plot)
+- Polar (circular plots)
+- Maps (project positions on the globe to a flat plane)
+
+## Barplot in Cartesian Coords {.build}
+
+
+```{r, eval=FALSE}
+p <- ggplot( data=diamonds)
+### <b>
+p <- p + geom_bar(aes(fill=clarity, x=1))
+### </b>
+```
+
+```{r, echo=FALSE}
+ggplot( data=diamonds) + geom_bar(aes(fill=clarity, x=1))
+```
+
+
+## Barplot in Polar Coords {.build}
+
+Mapping radius to bar height
+
+```{r, eval=FALSE}
+p <- ggplot( data=diamonds) + geom_bar(aes(fill=clarity, x=1))
+### <b>
+p <- p  + coord_polar(theta="x")
+### </b>
+```
+
+```{r, echo=FALSE}
+ggplot( data=diamonds) + geom_bar(aes(fill=clarity, x=1)) + coord_polar(theta="x")
+```
+
+## Barplot in Polar Coords {.build}
+
+Mapping angle to bar height
+
+```{r, eval=FALSE}
+p <- ggplot( data=diamonds) + geom_bar(aes(fill=clarity, x=1))
+### <b>
+p <- p  + coord_polar(theta="y")
+### </b>
+```
+
+```{r, echo=FALSE}
+ggplot( data=diamonds) + geom_bar(aes(fill=clarity, x=1)) + coord_polar(theta="y")
+```
 
 ## Facetting {.build}
 
@@ -195,39 +239,52 @@ p+facet_grid(color~cut)
 
 ## Reshaping data {.smaller}
 
-Use the `reshape2` package to easily transform data for `ggplot`
+Use the `reshape2` (or `tidyr`) package to easily transform data for `ggplot`
+
+```{r echo=FALSE, include=FALSE}
+library(dplyr)
+```
 
 ```{r}
-d<-read.csv("mqdata.csv")
-head(d)
+d <- read.csv("mqdata.csv")
+d %>% head()
 ```
 
 ## Melt data from wide to tall {.smaller .build}
 
 ```{r}
-library(reshape2)
-md=melt(d,id.vars=c("Protein","nmiss"),variable.name="Sample",value.name="Intensity")
+library(tidyr)
+##md=melt(d,id.vars=c("Protein","nmiss"),variable.name="Sample",value.name="Intensity")
+md <- d %>% gather(Sample,Intensity,-Protein,-nmiss)
 head(md)
 ```
+
+Most of the time this is what you want for `ggplot`
 
 ## Cast from tall to wide {.smaller .build}
 
 ```{r}
-cmd=dcast(md,Protein+nmiss~Sample,value.var='Intensity')
-head(cmd)
+md %>% spread(key = Sample, value = Intensity) %>% head
 ```
 
-## Visualise Missingness
+Often this is how data arrives
 
-```{r,eval=FALSE}
-p<-ggplot(md,aes(x=as.factor(nmiss),y=log2(Intensity)))
-p+geom_boxplot()+facet_wrap(~Sample)
-```
+## Plots that don't fit the ggplot paradigm
 
-```{r,echo=FALSE}
-options(warn=-1)
-suppressWarnings(ggplot(md,aes(x=as.factor(nmiss),y=log2(Intensity)))+geom_boxplot()+facet_wrap(~Sample))
-```
+Heatmaps!
+
+![Made with heatmap2 not ggplot](heatmap2_example.png)
+
+
+## Why heatmaps break ggplot
+
+- Composed of multiple sub-plots
+- Image plot is made (on **tall** data)
+- Clustering and dendrograms (on **wide** data)
+- Want to map aesthetics to both row and colum metadata
+
+
+
 
 
 
